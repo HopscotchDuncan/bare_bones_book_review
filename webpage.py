@@ -128,12 +128,12 @@ def book(book_id):
         return "<h1>Book not found!</h1>"
 
     body += "<h1>" + book["name"] + "</h1>"
+    body += "<h3>" + "Written by " + book["author"] + ", " + str(book["year"]) + "</h3>"
     if (genres != None):
         genre_array = []
         for genre in genres:
             genre_array.append(genre["genre"])
-        body += "<div>" + ", ".join(genre_array) + "</div>"
-    body += "<h3>" + "Written by " + book["author"] + ", " + str(book["year"]) + "</h3>"
+        body += "<div>" + ", ".join(genre_array) + "</div><br>"
     body += "<a href=http://" + book["url"] + " target=_blank>Buy it here for " + str(book["price"]) + "!</a>" # open in new tab
     # todo add average rating here
 
