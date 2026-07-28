@@ -45,12 +45,14 @@ def construct_db_response(select_statement, column_names):
         for i in range(0, formatted_length):
             constructed[column_names[i]] = entry[i]
         constructed_full.append(constructed)
+
     return constructed_full
 
 
 # get based on table and id
 def get(table, id):
     response = construct_db_response("select * from " + table + " where " + table[:len(table)-1] + "_id = " + str(id), get_table_columns(table))
+
     if len(response) > 0:
         return response[0]
     else:
@@ -66,8 +68,8 @@ def read(table, params):
         where_array.append(i + " = " + str(params[i]))
 
     select_statement += " and ".join(where_array)
-
     response = construct_db_response(select_statement, get_table_columns(table))
+
     if len(response) > 0:
         return response
     else:
@@ -90,10 +92,23 @@ def custom():
     return
 
 
+def add_search_bar():
+    return "<form action=\"/search\"><input placeholder=\"Search for a book...\"></input></form>"
+
+
 @app.route("/")
 def main():
+    body = "<body>"
+    body += "<h1>Welcome to Bare Bones Book Reviews!</h1>"
+    body += add_search_bar()
+    body += "</body>"
+    return body
+
+
+@app.route("/search/<string:query>")
+def search():
     #todo
-    return '<h1>Welcome to Bare Bones Book Reviews!</h1>'
+    return
 
 
 @app.route("/test")
@@ -107,16 +122,23 @@ def book(book_id):
 
     # construct book
     book = get("books", book_id)
+    genres = read("genres", {"book_id": book_id})
 
     if (book == None):
         return "<h1>Book not found!</h1>"
 
     body += "<h1>" + book["name"] + "</h1>"
+    if (genres != None):
+        genre_array = []
+        for genre in genres:
+            genre_array.append(genre["genre"])
+        body += "<div>" + ", ".join(genre_array) + "</div>"
     body += "<h3>" + "Written by " + book["author"] + ", " + str(book["year"]) + "</h3>"
     body += "<a href=http://" + book["url"] + " target=_blank>Buy it here for " + str(book["price"]) + "!</a>" # open in new tab
     # todo add average rating here
 
     # construct reviews
+    # todo add an add review button here
     reviews = read("reviews", {"book_id": book_id})
 
     if (reviews != None):
