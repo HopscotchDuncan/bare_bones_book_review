@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+<html>
+	<body>
+		{% if book %}
+			<h1>{{book["name"]}}</h1>
+			<h3>Written by {{book["author"]}}, {{book["year"]}}</h3>
+			{% if genres %}
+				{% for genre in genres %}
+					<div>{{genre["genre"]}}</div>
+				{% endfor %}
+			{% endif %}
+			<a href="http://{{book['url']}}" target=_blank>Buy it here for {{book["price"]}}!</a>
+			{% if reviews %}
+				<br><br>
+				{% for review in reviews %}
+					<h4>{{review["title"]}} - {{review["rating"]}}*</h4>
+					<div>Written by {{review["reviewer"]}} on {{review["date"]}}</div>
+					<details><summary>Review</summary>{{review["description"]}}</details>
+				{% endfor %}
+			{% endif %}
+		{% else %}
+			<h1>Book not found!</h1>
+		{% endif %}
+	</body>
+</html>

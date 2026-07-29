@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+
+<html>
+	<body>
+		<h1>Welcome to Bare Bones Book Reviews!</h1>
+		<form action=\"/search\">
+			<input placeholder=\"Search for a book...\">
+			</input>
+		</form>
+	</body>
+</html>

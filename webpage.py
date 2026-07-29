@@ -8,6 +8,7 @@ import sqlite3 as sql
 # - Add ability to create new book entry
 #  - Add ability to create new genre entries per book
 # - Add ability to create new review entry
+# - Add average rating to book
 # - Generic date formatter? Treat this like an extra
 
 app = Flask(__name__)
@@ -15,8 +16,8 @@ connection_string = "./final_project_db.db"
 
 # I think it's fine to keep this dumb, handling can be done higher up
 def sql_call(query):
-    if (!sql.complete_statement(query)):
-        return []
+    #if (!sql.complete_statement(query)):
+    #    return []
 
     con = sql.connect(connection_string)
     cur = con.cursor()
@@ -91,34 +92,15 @@ def delete(table, id):
     return
 
 
-def add_search_bar():
-    return "<form action=\"/search\"><input placeholder=\"Search for a book...\"></input></form>"
-
-
 @app.route("/")
 def home():
-    body = "<body>"
-    body += "<h1>Welcome to Bare Bones Book Reviews!</h1>"
-    body += add_search_bar()
-    body += "</body>"
-    return body
+    return render_template("home.html")
 
 
 @app.route("/search/<string:query>")
 def search(query):
-    body = "<body>"
-    body += add_search_bar()
-
     books = construct_db_response("select * from books where name like \"%" + query + "%\"", get_table_columns("books"))
-    
-    if (len(books) > 0):
-        for book in books:
-            body += "<h2><a href=\"/book/" + str(book["book_id"]) + "\">" + book["name"] + "</a></h2>"
-    else:
-        body += "<h1>No search results!</h1>"
-
-    body += "</body>"
-    return body
+    return render_template("search.html", books=books)
 
 
 @app.route("/test")
@@ -128,38 +110,13 @@ def test():
 
 @app.route("/book/<int:book_id>")
 def book(book_id):
-    body = "<body>"
-
-    # construct book
     book = get("books", book_id)
+    if book is None:
+        return render_template("book.html", book=book)
     genres = read("genres", {"book_id": book_id})
-
-    if (book == None):
-        return "<h1>Book not found!</h1>"
-
-    body += "<h1>" + book["name"] + "</h1>"
-    body += "<h3>" + "Written by " + book["author"] + ", " + str(book["year"]) + "</h3>"
-    if (genres != None):
-        genre_array = []
-        for genre in genres:
-            genre_array.append(genre["genre"])
-        body += "<div>" + ", ".join(genre_array) + "</div><br>"
-    body += "<a href=http://" + book["url"] + " target=_blank>Buy it here for " + str(book["price"]) + "!</a>" # open in new tab
-    # todo add average rating here
-
-    # construct reviews
-    # todo add an add review button here
     reviews = read("reviews", {"book_id": book_id})
-
-    if (reviews != None):
-        body += "<br><br>"
-        for review in reviews:
-            body += "<h4>" + review["title"] + " - " + str(review["rating"]) + "*</h4>"
-            body += "<div>Written by " + review["reviewer"] + " on " + review["date"] + "</div>"
-            body += "<details><summary>Review</summary>" + review["description"] + "</details>"
-
-    body += "</body>"
-    return body
+    
+    return render_template("book.html", book=book, genres=genres, reviews=reviews)
 
 
 @app.route("/create/<string:table>")

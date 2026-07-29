@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+
+<html>
+	<body>
+		{% if books %}
+			{% for book in books %}
+				<h2><a href="/book/{{book['book_id']}}">{{book["name"]}}</a></h2>
+			{% endfor %}
+		{% else %}
+			<h1>No search results!</h1>
+		{% endif %}
+	</body>
+</html>
