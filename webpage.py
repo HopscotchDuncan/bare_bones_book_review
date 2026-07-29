@@ -1,29 +1,33 @@
-from flask import Flask
+from flask import Flask, render_template, request
 import sqlite3 as sql
 # if this ends up being bigger should probably use a mysql connection
 
 # TODO:
-# - Add search bar to home page
-# - Develop update and create functions
+# - Add search bar
+# - Develop update, create, and delete functions
 # - Add ability to create new book entry
 #  - Add ability to create new genre entries per book
 # - Add ability to create new review entry
-# - Add custom sql statement method (I think I'm gonna need this for the review rating)
 # - Generic date formatter? Treat this like an extra
-# Error checks
-# - If anything is not given
-# - If SQL statement is incomplete (should be trivial)
 
 app = Flask(__name__)
 connection_string = "./final_project_db.db"
 
-# get column names, used for construct_db_response in get and read
-def get_table_columns(table):
+# I think it's fine to keep this dumb, handling can be done higher up
+def sql_call(query):
+    if (!sql.complete_statement(query)):
+        return []
+
     con = sql.connect(connection_string)
     cur = con.cursor()
 
-    execute = cur.execute("pragma table_info(" + table + ")")
-    headers = execute.fetchall()    
+    result = cur.execute(query)
+    return result.fetchall()  
+
+
+# get column names, used for construct_db_response in get and read
+def get_table_columns(table):
+    headers = sql_call("pragma table_info(" + table + ")")
     column_names = []
 
     for i in headers:
@@ -34,13 +38,9 @@ def get_table_columns(table):
 
 # get keyed response from db, used in get and read
 def construct_db_response(select_statement, column_names):
-    con = sql.connect(connection_string)
-    cur = con.cursor()
     formatted_length = len(column_names)
-
-    result = cur.execute(select_statement)
     constructed_full = []
-    for entry in result.fetchall():
+    for entry in sql_call(select_statement):
         constructed = {}
         for i in range(0, formatted_length):
             constructed[column_names[i]] = entry[i]
@@ -53,7 +53,7 @@ def construct_db_response(select_statement, column_names):
 def get(table, id):
     response = construct_db_response("select * from " + table + " where " + table[:len(table)-1] + "_id = " + str(id), get_table_columns(table))
 
-    if len(response) > 0:
+    if (len(response) > 0):
         return response[0]
     else:
         return None
@@ -70,25 +70,24 @@ def read(table, params):
     select_statement += " and ".join(where_array)
     response = construct_db_response(select_statement, get_table_columns(table))
 
-    if len(response) > 0:
+    if (len(response) > 0):
         return response
     else:
         return None
 
 
-def update():
+def update(table, id, params):
     #todo
     return
 
 
-def create():
+def create(table, params):
     #todo
     return
 
 
-# todo I think I need this for an average rating thru review averages
-def custom():
-    #todo, use for average rating
+def delete(table, id):
+    #todo
     return
 
 
@@ -97,7 +96,7 @@ def add_search_bar():
 
 
 @app.route("/")
-def main():
+def home():
     body = "<body>"
     body += "<h1>Welcome to Bare Bones Book Reviews!</h1>"
     body += add_search_bar()
@@ -106,14 +105,25 @@ def main():
 
 
 @app.route("/search/<string:query>")
-def search():
-    #todo
-    return
+def search(query):
+    body = "<body>"
+    body += add_search_bar()
+
+    books = construct_db_response("select * from books where name like \"%" + query + "%\"", get_table_columns("books"))
+    
+    if (len(books) > 0):
+        for book in books:
+            body += "<h2><a href=\"/book/" + str(book["book_id"]) + "\">" + book["name"] + "</a></h2>"
+    else:
+        body += "<h1>No search results!</h1>"
+
+    body += "</body>"
+    return body
 
 
 @app.route("/test")
 def test():
-    return read("reviews", {"book_id": "2"})
+    return
 
 
 @app.route("/book/<int:book_id>")
@@ -147,6 +157,22 @@ def book(book_id):
             body += "<h4>" + review["title"] + " - " + str(review["rating"]) + "*</h4>"
             body += "<div>Written by " + review["reviewer"] + " on " + review["date"] + "</div>"
             body += "<details><summary>Review</summary>" + review["description"] + "</details>"
+
+    body += "</body>"
+    return body
+
+
+@app.route("/create/<string:table>")
+def create_object(table):
+    body = "<body>"
+    
+    columns = get_table_columns(table + "s")
+    
+    if (len(columns) == 0):
+        body += "<h1>" + table + " not found in DB!</h1></body>"
+        return body
+
+
 
     body += "</body>"
     return body
