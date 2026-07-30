@@ -2,6 +2,10 @@
 
 <html>
 	<body>
+		<form action="/search" method="post">
+			<input placeholder="Search for a book..." id="query" name="query">
+			<input type="submit" value="Search">
+		</form>
 		{% if books %}
 			{% for book in books %}
 				<h2><a href="/book/{{book['book_id']}}">{{book["name"]}}</a></h2>

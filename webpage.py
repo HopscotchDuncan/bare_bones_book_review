@@ -3,12 +3,10 @@ import sqlite3 as sql
 # if this ends up being bigger should probably use a mysql connection
 
 # TODO:
-# - Add search bar
 # - Develop update, create, and delete functions
 # - Add ability to create new book entry
 #  - Add ability to create new genre entries per book
 # - Add ability to create new review entry
-# - Add average rating to book
 # - Generic date formatter? Treat this like an extra
 
 app = Flask(__name__)
@@ -16,9 +14,6 @@ connection_string = "./final_project_db.db"
 
 # I think it's fine to keep this dumb, handling can be done higher up
 def sql_call(query):
-    #if (!sql.complete_statement(query)):
-    #    return []
-
     con = sql.connect(connection_string)
     cur = con.cursor()
 
@@ -54,7 +49,7 @@ def construct_db_response(select_statement, column_names):
 def get(table, id):
     response = construct_db_response("select * from " + table + " where " + table[:len(table)-1] + "_id = " + str(id), get_table_columns(table))
 
-    if (len(response) > 0):
+    if len(response) > 0:
         return response[0]
     else:
         return None
@@ -71,7 +66,7 @@ def read(table, params):
     select_statement += " and ".join(where_array)
     response = construct_db_response(select_statement, get_table_columns(table))
 
-    if (len(response) > 0):
+    if len(response) > 0:
         return response
     else:
         return None
@@ -97,27 +92,30 @@ def home():
     return render_template("home.html")
 
 
-@app.route("/search/<string:query>")
-def search(query):
-    books = construct_db_response("select * from books where name like \"%" + query + "%\"", get_table_columns("books"))
+@app.route("/search", methods=["POST"])
+def search():
+    books = construct_db_response("select * from books where name like \"%" + request.form["query"] + "%\"", get_table_columns("books"))
     return render_template("search.html", books=books)
-
-
-@app.route("/test")
-def test():
-    return
 
 
 @app.route("/book/<int:book_id>")
 def book(book_id):
+    # maybe refactor this to send a json rather than a bunch of params
     book = get("books", book_id)
     if book is None:
         return render_template("book.html", book=book)
     genres = read("genres", {"book_id": book_id})
     reviews = read("reviews", {"book_id": book_id})
+    avg_rating_call = sql_call("select avg(rating) from reviews where book_id = " + str(book_id))
     
-    return render_template("book.html", book=book, genres=genres, reviews=reviews)
+    if len(avg_rating_call) > 0:
+        # lol this sux
+        avg = avg_rating_call[0]
+        avg_rating = avg[0]
+        return render_template("book.html", book=book, genres=genres, reviews=reviews, avg_rating=avg_rating)
 
+    return render_template("book.html", book=book, genres=genres, reviews=reviews)
+    
 
 @app.route("/create/<string:table>")
 def create_object(table):

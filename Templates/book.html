@@ -2,8 +2,15 @@
 
 <html>
 	<body>
+		<form action="/search" method="post">
+			<input placeholder="Search for a book..." id="query" name="query">
+			<input type="submit" value="Search">
+		</form>
 		{% if book %}
 			<h1>{{book["name"]}}</h1>
+			{% if avg_rating %}
+				<h2>{{ avg_rating }}/5 *</h2>
+			{% endif %}
 			<h3>Written by {{book["author"]}}, {{book["year"]}}</h3>
 			{% if genres %}
 				{% for genre in genres %}
