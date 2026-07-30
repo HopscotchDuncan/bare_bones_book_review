@@ -3,10 +3,10 @@ import sqlite3 as sql
 # if this ends up being bigger should probably use a mysql connection
 
 # TODO:
-# - Develop update, create, and delete functions
 # - Add ability to create new book entry
-#  - Add ability to create new genre entries per book
-# - Add ability to create new review entry
+# - Add ability to create new genre entries per book
+# - Add ability to create new review entry per book
+# - Add delete to every page
 # - Generic date formatter? Treat this like an extra
 
 app = Flask(__name__)
@@ -72,19 +72,31 @@ def read(table, params):
         return None
 
 
+# update given table with id and params
 def update(table, id, params):
-    #todo
-    return
+    # potentially update this to drop the table_id from params if present, do later shrug
+    update_statement = "update " + table + " set "
+    set_array = []
+    
+    for i in params:
+        set_array.append(i + " = " + str(params[i]))
+    
+    update_statement += ", ".join(set_array)
+    update_statement += " where " + table[:len(table)-1] + "_id = " + str(id)
+    return sql_call(update_statement)
 
 
+# create object based on given table and params
 def create(table, params):
-    #todo
-    return
+    columns = get_table_columns(table)
+    insert_statement = "insert into " + table + "(" + ", ".join(params.keys()) + ") values (" + ", ".join(params.values()) + ")"
+    return sql_call(insert_statement)
 
 
+# delete single row from table with the given id (danger!)
 def delete(table, id):
-    #todo
-    return
+    delete_statement = "delete from " + table + " where " + table[:len(table)-1] + "_id = " + str(id)
+    return sql_call(delete_statement)
 
 
 @app.route("/")
@@ -115,20 +127,34 @@ def book(book_id):
         return render_template("book.html", book=book, genres=genres, reviews=reviews, avg_rating=avg_rating)
 
     return render_template("book.html", book=book, genres=genres, reviews=reviews)
-    
-
-@app.route("/create/<string:table>")
-def create_object(table):
-    body = "<body>"
-    
-    columns = get_table_columns(table + "s")
-    
-    if (len(columns) == 0):
-        body += "<h1>" + table + " not found in DB!</h1></body>"
-        return body
 
 
+@app.route("/create_book", methods=["GET", "POST"])
+def create_book():
+    #if request.method == "POST":
+    #    name = request.form["name"]
+    #    price = request.form["price"]
+    #    author = request.form["author"]
+    #    year = request.form["year"]
+    #    url = request.form["url"]
+    #    created = create("books", {
+    #        "name": name,
+    #        "price": price,
+    #        "author": author,
+    #        "year": year,
+    #        "url": url,
+    #    })
+    #    return created
+    #else:
+        return render_template("create_book.html")
 
-    body += "</body>"
-    return body
+
+@app.route("/create_review", methods=["GET", "POST"])
+def create_review():
+    return render_template("create_review.html")
+
+
+@app.route("/create_genre", methods=["GET", "POST"])
+def create_genre():
+    return render_template("create_genre.html")
 

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<h1>Add Review</h1>
+		<form method="post">
+			<label>Book ID:</label>
+      <input type="number" name="book_id" disabled value={{book_id}}><br/>
+			<label>Review Title:</label>
+      <input type="text" name="title" placeholder="Enter the review's title" required><br/>
+			<label>Reviewer Name:</label>
+      <input type="text" name="name" placeholder="Enter the review's author" required><br/>
+			<label>Rating:</label>
+      <input type="number" step="1" min="1" max="5" name="rating" placeholder="Enter the review's rating of the book" required><br/>
+			<label>Review:</label>
+      <input type="text" name="description" placeholder="Write the review here!" required><br/>
+			<input type="submit" value="Create review!">
+		</form>
+	</body>
+</html>
