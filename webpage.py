@@ -1,13 +1,16 @@
 from flask import Flask, render_template, request
+from datetime import datetime
 import sqlite3 as sql
 # if this ends up being bigger should probably use a mysql connection
 
 # TODO:
-# - Add ability to create new book entry
-# - Add ability to create new genre entries per book
-# - Add ability to create new review entry per book
 # - Add delete to every page
+# Extras, to go above and beyond or to develop later
 # - Generic date formatter? Treat this like an extra
+# - Restrict resubmission of forms to create multiple of one object
+# - Confirm layer for deleting objects
+# - Combine create and edit, if {{table}}_id is given edit, else create
+# - Research why all values after space aren't filled into the text boxes in edit
 
 app = Flask(__name__)
 connection_string = "./final_project_db.db"
@@ -77,14 +80,17 @@ def read(table, params):
 def update(table, id, params):
     # potentially update this to drop the table_id from params if present, do later shrug
     update_statement = "update " + table + " set "
-    set_array = []
     
+    values = []
     for i in params:
-        set_array.append(i + " = " + str(params[i]))
+        if i["needs_escape"]:
+            values.append(i["column"] + " = '" + str(i["value"]) + "'")
+        else:
+            values.append(i["column"] + " = " + str(i["value"]))
     
-    update_statement += ", ".join(set_array)
+    update_statement += ", ".join(values)
     update_statement += " where " + table[:len(table)-1] + "_id = " + str(id)
-    return sql_call(update_statement)
+    sql_call(update_statement)
 
 
 # create object based on given table and params
@@ -154,6 +160,41 @@ def create_book():
         # kinda sucks but gotta do it
         create("books", [
             dict(
+                value=name,
+                needs_escape=True
+            ),
+            dict(
+                value=price,
+                needs_escape=False
+            ),
+            dict(
+                value=author,
+                needs_escape=True
+            ),
+            dict(
+                value=year,
+                needs_escape=False
+            ),
+            dict(
+                value=url,
+                needs_escape=True
+            ),
+        ])
+        return render_template("home.html", message="Book created successfully!")
+    else:
+        return render_template("create_book.html")
+
+
+@app.route("/edit_book/<string:book_id>", methods=["GET", "POST"])
+def edit_book(book_id):
+    if request.method == "POST":
+        name = request.form["name"]
+        price = request.form["price"]
+        author = request.form["author"]
+        year = request.form["year"]
+        url = request.form["url"]
+        update("books", book_id, [
+            dict(
                 column="name",
                 value=name,
                 needs_escape=True
@@ -179,17 +220,126 @@ def create_book():
                 needs_escape=True
             ),
         ])
-        return render_template("home.html", message="Book created successfully!")
+        return book(book_id)
     else:
-        return render_template("create_book.html")
+        _book = get("books", book_id)
+        return render_template("edit_book.html", book=_book)
 
 
-@app.route("/create_review", methods=["GET", "POST"])
-def create_review():
-    return render_template("create_review.html")
+@app.route("/create_review/<string:book_id>", methods=["GET", "POST"])
+def create_review(book_id):
+    if request.method == "POST":
+        title = request.form["title"]
+        name = request.form["name"]
+        rating = request.form["rating"]
+        description = request.form["description"]
+        # kinda sucks but gotta do it
+        create("reviews", [
+            dict(
+                value=book_id,
+                needs_escape=False
+            ),
+            dict(
+                value=title,
+                needs_escape=True
+            ),
+            dict(
+                value=name,
+                needs_escape=True
+            ),
+            dict(
+                value=rating,
+                needs_escape=False
+            ),
+            dict(
+                value=description,
+                needs_escape=True
+            ),
+            dict(
+                value=datetime.today().strftime('%d-%m-%Y'),
+                needs_escape=True
+            ),
+        ])
+        return book(book_id)
+    else:
+        return render_template("create_review.html")
 
 
-@app.route("/create_genre", methods=["GET", "POST"])
-def create_genre():
-    return render_template("create_genre.html")
+@app.route("/edit_review/<string:review_id>", methods=["GET", "POST"])
+def edit_review(review_id):
+    _review = get("reviews", review_id)
+    if request.method == "POST":
+        title = request.form["title"]
+        name = request.form["name"]
+        rating = request.form["rating"]
+        description = request.form["description"]
+        # kinda sucks but gotta do it
+        update("reviews", review_id, [
+            dict(
+                column="title",
+                value=title,
+                needs_escape=True
+            ),
+            dict(
+                column="reviewer",
+                value=name,
+                needs_escape=True
+            ),
+            dict(
+                column="rating",
+                value=rating,
+                needs_escape=False
+            ),
+            dict(
+                column="description",
+                value=description,
+                needs_escape=True
+            ),
+            dict(
+                column="date",
+                value=datetime.today().strftime('%d-%m-%Y'),
+                needs_escape=True
+            ),
+        ])
+        return book(_review["book_id"])
+    else:
+        return render_template("edit_review.html", review=_review)
+
+
+@app.route("/create_genre/<string:book_id>", methods=["GET", "POST"])
+def create_genre(book_id):
+    if request.method == "POST":
+        genre = request.form["genre"]
+        # kinda sucks but gotta do it
+        create("genres", [
+            dict(
+                value=genre,
+                needs_escape=True
+            ),
+            dict(
+                value=book_id,
+                needs_escape=False
+            ),
+        ])
+        return book(book_id)
+    else:
+        return render_template("create_genre.html")
+
+
+@app.route("/edit_genre/<string:genre_id>", methods=["GET", "POST"])
+def edit_genre(genre_id):
+    _genre = get("genres", genre_id)
+    if request.method == "POST":
+        genre = request.form["genre"]
+        # kinda sucks but gotta do it
+        update("genres", genre_id, [
+            dict(
+                column="genre",
+                value=genre,
+                needs_escape=True
+            ),
+        ])
+        return book(_genre["book_id"])
+    else:
+        return render_template("edit_genre.html", genre=_genre)
 

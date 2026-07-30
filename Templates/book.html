@@ -15,15 +15,23 @@
 			{% if genres %}
 				{% for genre in genres %}
 					<div>{{genre["genre"]}}</div>
+					<div><a href="/edit_genre/{{genre['genre_id']}}">Edit genre</a></div>
+					<div>Delete genre</div>
 				{% endfor %}
 			{% endif %}
-			<a href="http://{{book['url']}}" target=_blank>Buy it here for {{book["price"]}}!</a>
+			<a href="/create_genre/{{book['book_id']}}">Add a genre here!</a><br><br>
+			<a href="http://{{book['url']}}" target=_blank>Buy it here for {{book["price"]}}!</a><br><br>
+			<div><a href="/edit_book/{{book['book_id']}}">Edit book</a></div>
+			<div>Delete book</div>
+			<a href="/create_review/{{book['book_id']}}">Add a review here!</a>
 			{% if reviews %}
 				<br><br>
 				{% for review in reviews %}
 					<h4>{{review["title"]}} - {{review["rating"]}}*</h4>
 					<div>Written by {{review["reviewer"]}} on {{review["date"]}}</div>
 					<details><summary>Review</summary>{{review["description"]}}</details>
+					<div><a href="/edit_review/{{review['review_id']}}">Edit review</a></div>
+					<div>Delete review</div>
 				{% endfor %}
 			{% endif %}
 		{% else %}

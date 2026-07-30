@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<h1>Add Review</h1>
+		<form method="post">
+			<label>Review Title:</label>
+      <input type="text" name="title" placeholder="Enter the review's title" required value={{review["title"]}}><br/>
+			<label>Reviewer Name:</label>
+      <input type="text" name="name" placeholder="Enter the review's author" required value={{review["reviewer"]}}><br/>
+			<label>Rating:</label>
+      <input type="number" step="1" min="1" max="5" name="rating" placeholder="Enter the review's rating of the book" required value={{review["rating"]}}><br/>
+			<label>Review:</label>
+      <input type="text" name="description" placeholder="Write the review here!" required value={{review["description"]}}><br/>
+			<input type="submit" value="Update review!">
+		</form>
+	</body>
+</html>
