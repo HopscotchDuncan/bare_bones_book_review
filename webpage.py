@@ -18,6 +18,7 @@ def sql_call(query):
     cur = con.cursor()
 
     result = cur.execute(query)
+    con.commit()
     return result.fetchall()  
 
 
@@ -88,9 +89,22 @@ def update(table, id, params):
 
 # create object based on given table and params
 def create(table, params):
+    # need id, no autoincrement in sqlite that I'm aware of, so we'll manually calculate it here
+    count_result = sql_call("select count(*) from " + table)
+    new_id = count_result[0][0] + 1
+
     columns = get_table_columns(table)
-    insert_statement = "insert into " + table + "(" + ", ".join(params.keys()) + ") values (" + ", ".join(params.values()) + ")"
-    return sql_call(insert_statement)
+
+    # construct insert with escaping
+    values = []
+    for i in params:
+        if i["needs_escape"]:
+            values.append("'" + i["value"] + "'")
+        else:
+            values.append(i["value"])
+
+    insert_statement = "insert into " + table + " values (" + str(new_id) + ", " + ", ".join(values) + ")"
+    sql_call(insert_statement)
 
 
 # delete single row from table with the given id (danger!)
@@ -131,21 +145,42 @@ def book(book_id):
 
 @app.route("/create_book", methods=["GET", "POST"])
 def create_book():
-    #if request.method == "POST":
-    #    name = request.form["name"]
-    #    price = request.form["price"]
-    #    author = request.form["author"]
-    #    year = request.form["year"]
-    #    url = request.form["url"]
-    #    created = create("books", {
-    #        "name": name,
-    #        "price": price,
-    #        "author": author,
-    #        "year": year,
-    #        "url": url,
-    #    })
-    #    return created
-    #else:
+    if request.method == "POST":
+        name = request.form["name"]
+        price = request.form["price"]
+        author = request.form["author"]
+        year = request.form["year"]
+        url = request.form["url"]
+        # kinda sucks but gotta do it
+        create("books", [
+            dict(
+                column="name",
+                value=name,
+                needs_escape=True
+            ),
+            dict(
+                column="price",
+                value=price,
+                needs_escape=False
+            ),
+            dict(
+                column="author",
+                value=author,
+                needs_escape=True
+            ),
+            dict(
+                column="year",
+                value=year,
+                needs_escape=False
+            ),
+            dict(
+                column="url",
+                value=url,
+                needs_escape=True
+            ),
+        ])
+        return render_template("home.html", message="Book created successfully!")
+    else:
         return render_template("create_book.html")
 
 
