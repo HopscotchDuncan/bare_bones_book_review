@@ -4,13 +4,14 @@ import sqlite3 as sql
 # if this ends up being bigger should probably use a mysql connection
 
 # TODO:
-# - Add delete to every page
 # Extras, to go above and beyond or to develop later
 # - Generic date formatter? Treat this like an extra
 # - Restrict resubmission of forms to create multiple of one object
 # - Confirm layer for deleting objects
 # - Combine create and edit, if {{table}}_id is given edit, else create
 # - Research why all values after space aren't filled into the text boxes in edit
+# - Safeguard deletion of nonexistent id
+# - Delete all linked items when an object is deleted, like reviews and genres when deleting a book
 
 app = Flask(__name__)
 connection_string = "./final_project_db.db"
@@ -96,7 +97,7 @@ def update(table, id, params):
 # create object based on given table and params
 def create(table, params):
     # need id, no autoincrement in sqlite that I'm aware of, so we'll manually calculate it here
-    count_result = sql_call("select count(*) from " + table)
+    count_result = sql_call("select max(" + table[:len(table)-1] + "_id) from " + table)
     new_id = count_result[0][0] + 1
 
     columns = get_table_columns(table)
@@ -226,6 +227,12 @@ def edit_book(book_id):
         return render_template("edit_book.html", book=_book)
 
 
+@app.route("/delete_book/<string:book_id>", methods=["GET", "POST"])
+def delete_book(book_id):
+    delete("books", book_id)
+    return render_template("home.html")
+
+
 @app.route("/create_review/<string:book_id>", methods=["GET", "POST"])
 def create_review(book_id):
     if request.method == "POST":
@@ -306,6 +313,14 @@ def edit_review(review_id):
         return render_template("edit_review.html", review=_review)
 
 
+@app.route("/delete_review/<string:review_id>", methods=["GET", "POST"])
+def delete_review(review_id):
+    review = get("reviews", review_id)
+    book_id = review["book_id"]
+    delete("reviews", review_id)
+    return book(book_id)
+
+
 @app.route("/create_genre/<string:book_id>", methods=["GET", "POST"])
 def create_genre(book_id):
     if request.method == "POST":
@@ -342,4 +357,12 @@ def edit_genre(genre_id):
         return book(_genre["book_id"])
     else:
         return render_template("edit_genre.html", genre=_genre)
+
+
+@app.route("/delete_genre/<string:genre_id>", methods=["GET", "POST"])
+def delete_genre(genre_id):
+    genre = get("genres", genre_id)
+    book_id = genre["book_id"]
+    delete("genres", genre_id)
+    return book(book_id)
 
